@@ -13,15 +13,80 @@ class wordleChar:
         self.loc = location
 
 
+class wordlePuzzle:
+    def __init__(self, solutions: "list[str]", guesses: "list[str]", isAlpha: "bool"):
+        """TODO
+
+        Args:
+            solutions (list[str]): _description_
+            guesses (list[str]): _description_
+            isAlpha (bool): _description_
+        """
+        self.wordleSolns: "list[str]" = solutions.copy()
+        self.wordleGuesses: "list[str]" = guesses.copy()
+        self.isAlpha: "bool" = isAlpha
+
+        # Data from the results of guesses
+        self.okChars: "list[wordleChar]" = []
+        self.badChars: "str" = []
+        self.placedChars: "list[wordleChar]" = []
+
+        self.isSolved: "bool" = False
+
+    def processResult(self, wordleGuessed: "str", result: "str") -> "None":
+        """TODO
+
+        Args:
+            result (str): _description_
+        """
+
+        if "ooooo" == result:
+            self.isSolved = True
+            return
+
+        # Append the input to the known data
+        for resIdx in range(len(result)):
+            if "x" == result[resIdx]:
+                chIsOk = False
+                for okc in self.okChars:
+                    if okc.ch == wordleGuessed[resIdx]:
+                        chIsOk = True
+                for pc in self.placedChars:
+                    if pc.ch == wordleGuessed[resIdx]:
+                        chIsOk = True
+                if not chIsOk:
+                    # This char definitely isn't in the word
+                    self.badChars.append(wordleGuessed[resIdx])
+            elif "-" == result[resIdx]:
+                # This char is in the word... somewhere...
+                self.okChars.append(wordleChar(resIdx, wordleGuessed[resIdx]))
+            elif "o" == result[resIdx]:
+                # This char is in the right place!
+                self.placedChars.append(wordleChar(resIdx, wordleGuessed[resIdx]))
+                # Make sure that placed chars are removed from the 'ok' list
+                for okc in list(self.okChars):
+                    if okc.ch == wordleGuessed[resIdx]:
+                        self.okChars.remove(okc)
+
+        # Find all valid remaining words
+        self.wordleSolns = trimWordleDict(
+            self.wordleSolns, self.badChars, self.okChars, self.placedChars
+        )
+        self.wordleGuesses = trimWordleDict(
+            self.wordleGuesses, self.badChars, self.okChars, self.placedChars
+        )
+
+
 ###############################################################################
 
 
-def validateInput(input: "str") -> bool:
+def validateInput(numWordles: "int", input: "str") -> "bool":
     """Validates user input by making sure its a string of length 5 with xo- chars
 
     Also quits the program if the word is solved
 
     Args:
+        numWordles (int): The number of wordle puzzles
         input (str): The user input
 
     Returns:
@@ -29,16 +94,24 @@ def validateInput(input: "str") -> bool:
     """
 
     # Validate length
-    if 5 != len(input):
+    if ((5 * numWordles) + (numWordles - 1)) != len(input):
         return False
 
     # Validate chars
+    allSolved: "bool" = True
     for i in range(len(input)):
-        if (input[i] != "x") and (input[i] != "o") and (input[i] != "-"):
+        if (
+            (input[i] != "x")
+            and (input[i] != "o")
+            and (input[i] != "-")
+            and (input[i] != " ")
+        ):
             return False
+        elif (input[i] == "x") or (input[i] == "-"):
+            allSolved = False
 
     # Check for a solve
-    if "ooooo" == input:
+    if allSolved:
         print("Got it!")
         exit()
 
@@ -46,7 +119,7 @@ def validateInput(input: "str") -> bool:
     return True
 
 
-def histogramFromSet(setOfWords: "list[str]", dictIsAlpha: "bool") -> "dict[float]":
+def histogramFromPuzzles(puzzles: "list[wordlePuzzle]") -> "dict[float]":
     """Create a histogram of letter occurrences in words
 
     Args:
@@ -59,7 +132,7 @@ def histogramFromSet(setOfWords: "list[str]", dictIsAlpha: "bool") -> "dict[floa
 
     # Initialize the histogram
     totalHistogram: "dict[float]" = {}
-    if dictIsAlpha:
+    if puzzles[0].isAlpha:
         for ch in ascii_lowercase:
             totalHistogram[ch] = 0.0
     else:
@@ -67,25 +140,29 @@ def histogramFromSet(setOfWords: "list[str]", dictIsAlpha: "bool") -> "dict[floa
             totalHistogram[ch] = 0.0
 
     # For each word
-    for word in setOfWords:
-        # Make a histogram of the chars in that word
-        wordHistogram = {}
-        for i in range(len(word)):
-            wordHistogram[word[i]] = True
-        # For each unique char in the word
-        for ch in wordHistogram.keys():
-            if wordHistogram[ch]:
-                # Add one to the total histogram
-                totalHistogram[ch] = totalHistogram[ch] + 1
+    totalNumWords: "int" = 0
+    puzzle: "wordlePuzzle"
+    for puzzle in puzzles:
+        for word in puzzle.wordleSolns:
+            # Make a histogram of the chars in that word
+            wordHistogram = {}
+            for i in range(len(word)):
+                wordHistogram[word[i]] = True
+            # For each unique char in the word
+            for ch in wordHistogram.keys():
+                if wordHistogram[ch]:
+                    # Add one to the total histogram
+                    totalHistogram[ch] = totalHistogram[ch] + 1
+        totalNumWords = totalNumWords + len(puzzle.wordleSolns)
 
     # Normalize
     for key in totalHistogram.keys():
-        totalHistogram[key] = totalHistogram[key] / len(setOfWords)
+        totalHistogram[key] = totalHistogram[key] / totalNumWords
 
     return totalHistogram
 
 
-def wordValue(word: "str", histogram: "dict[int]") -> int:
+def wordValue(word: "str", histogram: "dict[int]") -> "int":
     """Compute the value of a word by summing the values of the chars from a
     probability histogram. A lower number means the word better bisects the set
     of remaining words
@@ -114,7 +191,7 @@ def wordValue(word: "str", histogram: "dict[int]") -> int:
     return val
 
 
-def wordContainsUniqueLetters(word: "str", dictIsAlpha: "bool") -> bool:
+def wordContainsUniqueLetters(word: "str", dictIsAlpha: "bool") -> "bool":
     """Check if a word contains only unique letters
 
     Args:
@@ -145,7 +222,7 @@ def trimWordleDict(
     badChars: "str",
     okChars: "list[wordleChar]",
     placedChars: "list[wordleChar]",
-) -> None:
+) -> "list[str]":
     """Trim a dictionary given a list of chars not in the word, chars somewhere
     in the word, and chars definitely in a given location
 
@@ -188,8 +265,7 @@ def trimWordleDict(
             validWordles.append(word)
 
     # Replace old wordles with only valid words
-    wordles.clear()
-    wordles.extend(validWordles)
+    return validWordles
 
 
 ###############################################################################
@@ -200,11 +276,12 @@ def main():
     solnDictFileName: "str" = "wordle-solutions.txt"
     guessDictFileName: "str" = "wordle-guesses.txt"
     downloadLewdles: "bool" = False
+    numWordles: "int" = 1
 
     # Read the arguments to see if a different dictionary should be used
     try:
         opts, args = getopt.getopt(
-            sys.argv[1:], ":s:g:l", ["solutions", "guesses", "lewdle"]
+            sys.argv[1:], ":s:g:n:l", ["solutions", "guesses", "numPuzzles", "lewdle"]
         )
     except getopt.GetoptError as err:
         # print help information and exit:
@@ -216,6 +293,8 @@ def main():
             solnDictFileName = a
         elif o in ("-g", "--guesses"):
             guessDictFileName = a
+        elif o in ("-n", "--numPuzzles"):
+            numWordles = int(a)
         elif o in ("-l", "--lewdle"):
             downloadLewdles = True
         else:
@@ -235,109 +314,100 @@ def main():
             guessLines = f.readlines()
 
     # Get a list of five letter words
-    wordleSolns: "list[str]" = []
-    wordleGuesses: "list[str]" = []
+    initWordleSolns: "list[str]" = []
+    initWordleGuesses: "list[str]" = []
     line: "str"
     for line in solnLines:
         line = line.strip().lower()
         if 5 == len(line):
-            wordleSolns.append(line)
+            initWordleSolns.append(line)
     for line in guessLines:
         line = line.strip().lower()
         if 5 == len(line):
-            wordleGuesses.append(line)
+            initWordleGuesses.append(line)
 
     # Check if we should use digits or chars
     dictIsAlpha: "bool" = True
-    if wordleSolns[0].isnumeric():
+    if initWordleSolns[0].isnumeric():
         dictIsAlpha = False
 
+    # Create an array of wordle puzzles
+    puzzles: "list[wordlePuzzle]" = []
+    for i in range(numWordles):
+        puzzles.append(wordlePuzzle(initWordleSolns, initWordleSolns, dictIsAlpha))
+
     # Find the best starting word
-    charHist: "dict[float]" = histogramFromSet(wordleSolns, dictIsAlpha)
+    charHist: "dict[float]" = histogramFromPuzzles(puzzles)
 
     # for key in charHist.keys():
     #     print(key + " " + str(charHist.get(key)))
 
-    wordleGuesses.sort(key=lambda word: wordValue(word, charHist))
-    bestStarter: "str" = wordleGuesses[0].lower()
+    initWordleGuesses.sort(key=lambda word: wordValue(word, charHist))
+    bestStarter: "str" = initWordleGuesses[0].lower()
 
     # Tell the player how to start
     print("Start with " + bestStarter + ". What was the result? Use 'o' for a")
     print("letter in the right spot, '-' for a letter in the wrong spot, and")
     print("'x' for a bad letter")
 
+    # Track the last guessed word
     wordleGuessed: "str" = bestStarter
-
-    # Data from the results of guesses
-    okChars: "list[wordleChar]" = []
-    badChars: "str" = []
-    placedChars: "list[wordleChar]" = []
 
     # Iterate until the word is guessed
     wordleSolved: "bool" = False
-    round: "int" = 1
+    round: "int" = 0
+    puzzleFocus: "int" = 0
     while not wordleSolved:
 
         # Get input from the user
         resultIsValid: "bool" = False
         while not resultIsValid:
-            result: "str" = input()
-            resultIsValid = validateInput(result)
+            allResults: "str" = input()
+            resultIsValid = validateInput(numWordles, allResults)
             if not resultIsValid:
-                print("String must be length 5, made up of 'x', 'o', and '-'")
+                print(
+                    "String must be the right length, made up of 'x', 'o', '-', and ' '"
+                )
 
-        # Append the input to the known data
-        for resIdx in range(len(result)):
-            if "x" == result[resIdx]:
-                chIsOk = False
-                for okc in okChars:
-                    if okc.ch == wordleGuessed[resIdx]:
-                        chIsOk = True
-                for pc in placedChars:
-                    if pc.ch == wordleGuessed[resIdx]:
-                        chIsOk = True
-                if not chIsOk:
-                    # This char definitely isn't in the word
-                    badChars.append(wordleGuessed[resIdx])
-            elif "-" == result[resIdx]:
-                # This char is in the word... somewhere...
-                okChars.append(wordleChar(resIdx, wordleGuessed[resIdx]))
-            elif "o" == result[resIdx]:
-                # This char is in the right place!
-                placedChars.append(wordleChar(resIdx, wordleGuessed[resIdx]))
-                # Make sure that placed chars are removed from the 'ok' list
-                for okc in list(okChars):
-                    if okc.ch == wordleGuessed[resIdx]:
-                        okChars.remove(okc)
-
-        # Find all valid remaining words
-        trimWordleDict(wordleSolns, badChars, okChars, placedChars)
-        trimWordleDict(wordleGuesses, badChars, okChars, placedChars)
-
-        # Calculate a histogram of letters in valid wordles
-        charHistogram: "dict[int]" = histogramFromSet(wordleSolns, dictIsAlpha)
-
-        # Debug print all character probabilites
-        # for ch in charHistogram.keys():
-        #     print(str(ch) + " - " + str(charHistogram[ch]))
-
-        # Sort all valid wordles by how well they bisect the set
-        wordleSolns.sort(key=lambda word: wordValue(word, charHistogram))
-        wordleGuesses.sort(key=lambda word: wordValue(word, charHistogram))
+        # Process each puzzle's result
+        resIdx: "int" = 0
+        puzzle: "wordlePuzzle"
+        for puzzle in puzzles:
+            # Get this puzzle's result from the total string
+            result: "str" = allResults[resIdx : resIdx + 5]
+            resIdx = resIdx + 6
+            if not puzzle.isSolved:
+                puzzle.processResult(wordleGuessed, result)
+                # If this was solved, move to focusing on the next
+                if puzzle.isSolved:
+                    puzzleFocus = puzzleFocus + 1
 
         # If this is the first two rounds, pick from all possible guesses
         # For round 3 and later, only pick from the possible solutions
         wordlesToPickFrom: "list[str]"
-        if round < 2:
-            wordlesToPickFrom = wordleGuesses
-            print("Guessing from guesses")
-        else:
-            wordlesToPickFrom = wordleSolns
-            print("Guessing from solutions")
+        if round < 1:
+            # Calculate a histogram of letters in valid wordles in the focused puzzle
+            charHistogram: "dict[int]" = histogramFromPuzzles([puzzles[puzzleFocus]])
 
-        # Debug print all potential words
-        # for word in wordles:
-        #     print(" ? " + word)
+            # Debug print all character probabilites
+            # for ch in charHistogram.keys():
+            #     print(str(ch) + " - " + str(charHistogram[ch]))
+
+            # Sort all valid wordles by how well they bisect the set
+            puzzles[puzzleFocus].wordleGuesses.sort(
+                key=lambda word: wordValue(word, charHistogram)
+            )
+            wordlesToPickFrom = puzzles[puzzleFocus].wordleGuesses
+
+        else:
+            # Calculate a histogram of letters in valid wordles in the focused puzzle
+            charHistogram: "dict[int]" = histogramFromPuzzles([puzzles[puzzleFocus]])
+
+            # Sort all valid wordles by how well they bisect the set
+            puzzles[puzzleFocus].wordleSolns.sort(
+                key=lambda word: wordValue(word, charHistogram)
+            )
+            wordlesToPickFrom = puzzles[puzzleFocus].wordleSolns
 
         # Try guessing the word that best bisects the remaining set
         wordlePicked: "bool" = False
@@ -347,17 +417,21 @@ def main():
                 wordleGuessed = word
                 wordlePicked = True
                 break
+
         # Gotta pick a word with non-unique characters
         if not wordlePicked:
             print("Try " + wordlesToPickFrom[0].upper())
             wordleGuessed = wordlesToPickFrom[0]
 
         # Make sure to not guess this again
-        if wordleGuessed in wordleSolns:
-            wordleSolns.remove(wordleGuessed)
-        if wordleGuessed in wordleGuesses:
-            wordleGuesses.remove(wordleGuessed)
+        puzzle: "wordlePuzzle"
+        for puzzle in puzzles:
+            if wordleGuessed in puzzle.wordleSolns:
+                puzzle.wordleSolns.remove(wordleGuessed)
+            if wordleGuessed in puzzle.wordleGuesses:
+                puzzle.wordleGuesses.remove(wordleGuessed)
 
+        # Move to the next round
         round = round + 1
 
 

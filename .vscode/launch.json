@@ -14,7 +14,9 @@
                 "-g",
                 "./wordle-guesses.txt",
                 "-s",
-                "./wordle-solutions.txt"
+                "./wordle-solutions.txt",
+                "-n",
+                "8"
             ]
         }
     ]
