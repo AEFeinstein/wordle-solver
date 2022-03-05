@@ -1,11 +1,7 @@
-from ast import arg
-from operator import le
-from numpy import empty
 from selenium import webdriver
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.common.keys import Keys
 import re
-import subprocess
 
 from wordle import wordleSolver
 

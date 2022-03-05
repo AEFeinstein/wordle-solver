@@ -310,6 +310,11 @@ class wordleSolver:
             if 5 == len(line):
                 self.initWordleGuesses.append(line)
 
+        # Make sure all solutions are in the guesses list too
+        for word in self.initWordleSolns:
+            if word not in self.initWordleGuesses:
+                self.initWordleGuesses.append(word)
+
         # Check if we should use digits or chars
         self.dictIsAlpha: "bool" = True
         if self.initWordleSolns[0].isnumeric():
@@ -376,6 +381,12 @@ class wordleSolver:
             # Process the result
             if not puzzle.isSolved:
                 puzzle.processResult(self.wordleGuessed, result)
+
+                # TODO this sequential strategy works pretty well
+                if puzzle.isSolved:
+                    self.puzzleFocus = self.puzzleFocus + 1
+
+            # TODO this focused strategy works less good
             # Save the puzzle with the smallest number of possible solutions to focus on
             if not puzzle.isSolved and len(puzzle.wordleSolns) < smallestSolutionsSet:
                 smallestSolutionsSet = len(puzzle.wordleSolns)
