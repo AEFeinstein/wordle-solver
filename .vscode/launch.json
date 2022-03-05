@@ -5,7 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Python: auto-octordle.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/auto-octordle.py",
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Python: wordle.py",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/wordle.py",
@@ -16,7 +23,7 @@
                 "-s",
                 "./wordle-solutions.txt",
                 "-n",
-                "8"
+                "1"
             ]
         }
     ]
