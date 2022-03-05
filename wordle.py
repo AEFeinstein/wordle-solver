@@ -368,15 +368,18 @@ class wordleSolver:
         # Process each puzzle's result
         resIdx: "int" = 0
         puzzle: "wordlePuzzle"
+        smallestSolutionsSet: "int" = 1000000
         for puzzle in self.puzzles:
             # Get this puzzle's result from the total string
             result: "str" = allResults[resIdx : resIdx + 5]
             resIdx = resIdx + 6
+            # Process the result
             if not puzzle.isSolved:
                 puzzle.processResult(self.wordleGuessed, result)
-                # If this was solved, move to focusing on the next
-                if puzzle.isSolved:
-                    self.puzzleFocus = self.puzzleFocus + 1
+            # Save the puzzle with the smallest number of possible solutions to focus on
+            if not puzzle.isSolved and len(puzzle.wordleSolns) < smallestSolutionsSet:
+                smallestSolutionsSet = len(puzzle.wordleSolns)
+                self.puzzleFocus = self.puzzles.index(puzzle)
 
         # If this is the first two rounds, pick from all possible guesses
         # For round 3 and later, only pick from the possible solutions
