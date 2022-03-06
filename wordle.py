@@ -383,12 +383,12 @@ class wordleSolver:
                 puzzle.processResult(self.wordleGuessed, result)
 
                 # TODO this sequential strategy works pretty well
-                if puzzle.isSolved:
-                    self.puzzleFocus = self.puzzleFocus + 1
+                # if puzzle.isSolved:
+                #     self.puzzleFocus = self.puzzleFocus + 1
 
             # TODO this focused strategy works less good
             # Save the puzzle with the smallest number of possible solutions to focus on
-            if not puzzle.isSolved and len(puzzle.wordleSolns) < smallestSolutionsSet:
+            if (not puzzle.isSolved) and (0 < len(puzzle.wordleSolns)) and (len(puzzle.wordleSolns) < smallestSolutionsSet):
                 smallestSolutionsSet = len(puzzle.wordleSolns)
                 self.puzzleFocus = self.puzzles.index(puzzle)
 
