@@ -7,7 +7,7 @@ A Wordle-type game solver, written in Python.
 
 * `GUESS_DICT` - A text file containing all possible guesses to the game.
 * `SOLN_DICT` - A text file containing all possible solutions to the game. This should be a subset of `GUESS_DICT` and may be the same file.
-* `NUM_PUZZLES` - The number of simultaneous puzzles to solve. One for [Wordle](https://www.nytimes.com/games/wordle/index.html), four for [Quordle](https://www.quordle.com), or eight for [Octordle](https://octordle.com).
+* `NUM_PUZZLES` - The number of simultaneous puzzles to solve. One for [Wordle](https://www.nytimes.com/games/wordle/index.html), four for [Quordle](https://www.quordle.com), eight for [Octordle](https://octordle.com), or thirty two for [Duotrigordle](https://duotrigordle.com/).
 
 `wordle.py -l`
 
@@ -30,3 +30,11 @@ To play, type in the word that the program recommends, then type in the result u
 ### Lewdle
 
 [`getLewdles.sh`](/getLewdles.sh) is a script to download the solution list for [Lewdle](https://www.lewdlegame.com/).
+
+## Auto Solvers
+
+Sometimes typing in results for N-ordles can get cumbersome. [Selenium](https://selenium-python.readthedocs.io/) can be used to automate reading results from and inputting text to a browser.
+
+[Octordle](https://octordle.com) can be solved by running [`auto-octordle.py`](/auto-octordle.py).
+
+[Duotrigordle](https://duotrigordle.com/) can be solved by running [`auto-duotrigordle.py`](/auto-duotrigordle.py).
