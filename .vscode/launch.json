@@ -12,6 +12,13 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Python: auto-duotrigordle.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/auto-duotrigordle.py",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Python: wordle.py",
             "type": "python",
             "request": "launch",

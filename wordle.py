@@ -18,6 +18,17 @@ class wordleChar:
         self.ch = char
         self.loc = location
 
+    def __eq__(self, __o: object) -> bool:
+        """TODO
+
+        Args:
+            __o (object): _description_
+
+        Returns:
+            bool: _description_
+        """
+        return (self.ch == __o.ch) and (self.loc == __o.loc)
+
 
 class wordlePuzzle:
     def __init__(self, solutions: "list[str]", guesses: "list[str]", isAlpha: "bool"):
@@ -34,7 +45,7 @@ class wordlePuzzle:
 
         # Data from the results of guesses
         self.okChars: "list[wordleChar]" = []
-        self.badChars: "str" = []
+        self.badChars: "list[str]" = []
         self.placedChars: "list[wordleChar]" = []
 
         self.isSolved: "bool" = False
@@ -63,17 +74,27 @@ class wordlePuzzle:
                         chIsOk = True
                 if not chIsOk:
                     # This char definitely isn't in the word
-                    self.badChars.append(wordleGuessed[resIdx])
+                    if wordleGuessed[resIdx] not in self.badChars:
+                        self.badChars.append(wordleGuessed[resIdx])
+                        list.sort(self.badChars)
             elif "-" == result[resIdx]:
                 # This char is in the word... somewhere...
-                self.okChars.append(wordleChar(resIdx, wordleGuessed[resIdx]))
+                wc: "wordleChar" = wordleChar(resIdx, wordleGuessed[resIdx])
+                if(wc not in self.okChars):
+                    self.okChars.append(wc)
             elif "o" == result[resIdx]:
                 # This char is in the right place!
-                self.placedChars.append(wordleChar(resIdx, wordleGuessed[resIdx]))
+                wc: "wordleChar" = wordleChar(resIdx, wordleGuessed[resIdx])
+                if wc not in self.placedChars:
+                    self.placedChars.append(wc)
                 # Make sure that placed chars are removed from the 'ok' list
                 for okc in list(self.okChars):
                     if okc.ch == wordleGuessed[resIdx]:
                         self.okChars.remove(okc)
+                # Remove placed chars from the bad char list too
+                for bc in list(self.badChars):
+                    if bc == wordleGuessed[resIdx]:
+                        self.badChars.remove(bc)
 
         # Find all valid remaining words
         self.wordleSolns = trimWordleDict(
@@ -221,7 +242,7 @@ def wordContainsUniqueLetters(word: "str", dictIsAlpha: "bool") -> "bool":
 
 def trimWordleDict(
     wordles: "list[str]",
-    badChars: "str",
+    badChars: "list[str]",
     okChars: "list[wordleChar]",
     placedChars: "list[wordleChar]",
 ) -> "list[str]":
@@ -230,7 +251,7 @@ def trimWordleDict(
 
     Args:
         wordles (list[str]): The list of wordles to trim
-        badChars (str): A list of chars which do not appear in the solution
+        badChars (list[str]): A list of chars which do not appear in the solution
         okChars (list[wordleChar]): A list of chars that appear in the solution
         not at the given index
         placedChars (list[wordleChar]): A list of chars that appear in the
