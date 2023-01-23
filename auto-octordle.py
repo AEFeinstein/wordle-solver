@@ -8,21 +8,21 @@ from wordle import wordleSolver
 ws = wordleSolver("wordle-solutions.txt", "wordle-guesses.txt", 8, False)
 
 driver = webdriver.Firefox()
-driver.get("https://octordle.com/?mode=daily")
+driver.get("https://octordle.com/daily")
 puzzleTables: "list[str]" = [
-    "box-holder-1",
-    "box-holder-2",
-    "box-holder-3",
-    "box-holder-4",
-    "box-holder-5",
-    "box-holder-6",
-    "box-holder-7",
-    "box-holder-8",
+    "board-1",
+    "board-2",
+    "board-3",
+    "board-4",
+    "board-5",
+    "board-6",
+    "board-7",
+    "board-8",
 ]
 
 rowToRead: int = 0
 
-bodyElem: WebElement = driver.find_element_by_tag_name("body")
+bodyElem: WebElement = driver.find_element("tag name", "body")
 
 while not ws.wordleSolved:
     # Try the next word
@@ -37,35 +37,25 @@ while not ws.wordleSolved:
     # For each puzzle table
     for tableName in puzzleTables:
         rowIdx: int = 0
-        tableElem = driver.find_element_by_id(tableName)
+        tableElem = driver.find_element("id", tableName)
         # For each row
-        for rowElem in tableElem.find_elements_by_tag_name("tr"):
+        for rowElem in tableElem.find_elements("class name", "board-row"):
             # If this is the row to read
             if rowIdx == rowToRead:
                 # For each letter
-                for letterElem in rowElem.find_elements_by_tag_name("td"):
+                for letterElem in rowElem.find_elements("class name", "letter"):
                     # Get the letter and style
-                    style: "str" = letterElem.get_attribute("style")
+                    _class: "str" = letterElem.get_attribute("class")
                     letter: "str" = letterElem.text
-                    
-                    # extract RGB
-                    m = re.search( "color: [A-Za-z]+; background-color: rgb\((\d+), (\d+), (\d+)\);", style)
-                    r: "int" = int(m.group(1))
-                    g: "int" = int(m.group(2))
-                    b: "int" = int(m.group(3))
 
-                    # Turn RGB into the result string
                     if letter == '':
                         resultStr = resultStr + "o"
-                    elif r == 24 and g == 26 and b == 27:
-                        resultStr = resultStr + "x"
-                    elif r == 255 and g == 204 and b == 0:
-                        resultStr = resultStr + "-"
-                    elif r == 0 and g == 204 and b == 136:
+                    elif "exact-match" in _class:
                         resultStr = resultStr + "o"
+                    elif "word-match" in _class:
+                        resultStr = resultStr + "-"
                     else:
-                        print("Real problem")
-                        exit()
+                        resultStr = resultStr + "x"
                 break
             # Move to the next row
             rowIdx = rowIdx + 1

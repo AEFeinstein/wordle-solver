@@ -13,7 +13,7 @@ driver.get("https://duotrigordle.com/")
 
 rowToRead: int = 0
 
-bodyElem: WebElement = driver.find_element_by_tag_name("body")
+bodyElem: WebElement = driver.find_element("tag name", "body")
 
 while not ws.wordleSolved:
     # Try the next word
@@ -26,11 +26,11 @@ while not ws.wordleSolved:
     cellElem: "WebElement"
     resultStr: "str" = ""
     # For each puzzle table
-    for tableElem in driver.find_elements_by_class_name("board"):
+    for tableElem in driver.find_elements("class name", "board"):
         rowIdx: int = 0
         cellIdx: int = 0
         # For each cell
-        for cellElem in tableElem.find_elements_by_class_name("cell"):
+        for cellElem in tableElem.find_elements("class name", "cell"):
             # If this is the row to read
             if (rowToRead == rowIdx):
                 # Read out the colors
