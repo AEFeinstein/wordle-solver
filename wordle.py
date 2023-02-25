@@ -513,5 +513,59 @@ def main():
         ws.inputResult(input())
 
 
+def testAll():
+    with open("wordle-solutions.txt") as f:
+        allPossible = f.readlines()
+
+    numWordles = 0
+    numGuesses = 0
+    for solnWord in allPossible:
+        print ("Solving for " + solnWord.strip())
+        guesses = 0
+        ws = wordleSolver("wordle-solutions.txt", "wordle-guesses.txt", 1, False)
+        while not ws.wordleSolved:
+            # print("Try " + ws.getNextWord())
+            trialWord = ws.getNextWord()
+            guesses = guesses + 1
+            result = ""
+            for wordIdx in range(5):
+                if trialWord[wordIdx] == solnWord[wordIdx]:
+                    result = result + 'o'
+                elif trialWord[wordIdx] not in solnWord:
+                    result = result + 'x'
+                else:
+                    # Probably '-' may be 'x'
+
+                    # Find where in the solution this letter actually is
+                    matchesElsewhere = False
+                    doesntMatchElsewhere = False
+                    for pIdx in range(5):
+                        if trialWord[wordIdx] == solnWord[pIdx]:
+                            # char is at pIdx
+                            if solnWord[pIdx] == trialWord[pIdx]:
+                                matchesElsewhere = True
+                            else:
+                                doesntMatchElsewhere = True
+
+                    if matchesElsewhere and not doesntMatchElsewhere:
+                        result = result + 'x'
+                    else:
+                        result = result + '-'                        
+
+            # print(result)
+            ws.inputResult(result)
+
+        failLabel = ""
+        if(guesses > 6):
+            failLabel = "FAIL"
+        print ("  Solved %s in %d %s" % (solnWord.strip(), guesses, failLabel))
+        sys.stdout.flush()
+        numWordles = numWordles + 1
+        numGuesses = numGuesses + guesses
+
+    print("Solved %d wordles in %d guesses, avg %f" % (numWordles, numGuesses, numGuesses / numWordles))
+    
+
 if __name__ == "__main__":
+    # testAll()
     main()
