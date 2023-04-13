@@ -70,7 +70,7 @@ class wordlePuzzle:
                     if okc.ch == wordleGuessed[resIdx]:
                         chIsOk = True
                 for pc in self.placedChars:
-                    if pc.ch == wordleGuessed[resIdx]:
+                    if pc.ch == wordleGuessed[resIdx] and pc.loc == resIdx:
                         chIsOk = True
                 if not chIsOk:
                     # This char definitely isn't in the word
@@ -91,10 +91,6 @@ class wordlePuzzle:
                 for okc in list(self.okChars):
                     if okc.ch == wordleGuessed[resIdx]:
                         self.okChars.remove(okc)
-                # Remove placed chars from the bad char list too
-                for bc in list(self.badChars):
-                    if bc == wordleGuessed[resIdx]:
-                        self.badChars.remove(bc)
 
         # Find all valid remaining words
         self.wordleSolns = trimWordleDict(
@@ -262,10 +258,21 @@ def trimWordleDict(
     for word in wordles:
         valid: "bool" = True
 
-        # Make sure the word doesn't contain these chars
+        # Make sure the word doesn't contain these chars, unless already placed
         for badc in badChars:
-            if badc in word:
+            wordIdx = 0
+            # For each char in the word
+            for wordc in word:
+                # If the bad character is in the word
+                if badc == wordc:
+                    # Check if the bad character is already a placed character
+                    isPlaced = False
+                    for plc in placedChars:
+                        if plc.ch == badc and plc.loc == wordIdx:
+                            isPlaced = True
+                    if not isPlaced:
                 valid = False
+                wordIdx = wordIdx + 1
         if not valid:
             continue
 
@@ -352,7 +359,7 @@ class wordleSolver:
         # for key in charHist.keys():
         #     print(key + " " + str(charHist.get(key)))
 
-        self.initWordleGuesses.sort(key=lambda word: wordValue(word, charHist), reverse=True)
+        self.initWordleGuesses.sort(key=lambda word: wordValue(word, charHist))
         self.bestStarter: "str" = self.initWordleGuesses[0].lower()
 
         # Track the last guessed word
